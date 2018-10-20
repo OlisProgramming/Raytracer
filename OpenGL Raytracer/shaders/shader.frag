@@ -100,21 +100,28 @@ void main() {
 	if (t < 0) {
 		colour = vec4(0.f, 0.f, 0.f, 1.f);
 	} else {
+		// We'll model light intensity with the Phong reflection model.
+		vec3 ambientIntensity = vec3(1,1,1) * 0.05f;
+
 		// The intensity of the light from diffuse reflection at a certain point is affected
 		// by the angle the light makes with the material's normal.
 		vec3 intersectionPoint = r.o + t*r.d;
 		vec3 pointToLight = l.o - intersectionPoint;
-		float intensityMultiplier = dot(normalize(pointToLight), normalToSphere(intersectionPoint, s));
-		// We can't have negative light.
-		if (intensityMultiplier < 0) {
-			intensityMultiplier = 0;
-		}
+		float diffuseIntensityMultiplier = max(dot(normalize(pointToLight), normalToSphere(intersectionPoint, s)), 0.f);
+		vec3 diffuseIntensity = vec3(1,1,1) * diffuseIntensityMultiplier;
+
+		float shininess = 32;
+		vec3 reflectDir = reflect(-normalize(pointToLight), normalToSphere(intersectionPoint, s));
+		vec3 specularIntensity = vec3(1,1,1) * pow(max(-dot(r.d, reflectDir), 0.f), shininess);
 
 		// Intensity is calculated with the attenuation equation 1/d^2 (inverse-square law).
 		float distanceFromLight = length(pointToLight);
-		float intensity = l.atten / (distanceFromLight * distanceFromLight);
-		intensity *= intensityMultiplier;
+		float intensityMultiplier = l.atten / (distanceFromLight * distanceFromLight);
 
-		colour = vec4(1.f * intensity, 0.f, 0.f, 1.f);
+		vec3 result = ambientIntensity + diffuseIntensity + 0.5*specularIntensity;
+		result *= vec3(1, 0.1, 0.1);
+		result *= intensityMultiplier;
+
+		colour = vec4(result, 1.f);
 	}
 }
