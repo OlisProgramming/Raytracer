@@ -1,8 +1,6 @@
-#version 330
+#version 330 core
 
-//layout(binding = 0) uniform CameraUBO {
-//	float aspect;
-//} camUbo;
+uniform float aspect;
 
 in vec2 pos;
 out vec4 colour;
@@ -73,7 +71,7 @@ void main() {
 	// +z is up.
 	Ray r;
 	r.o = vec3(0.f, 0.f, 0.f);
-	r.d = normalize(vec3(1.f, pos.x, pos.y));
+	r.d = normalize(vec3(1.f, pos.x * aspect, pos.y));
 
 	Sphere s;
 	s.o = vec3(5.f, 0.f, 0.f);

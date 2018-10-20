@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "readfile.h"
+#include "uniform_manager.h"
 
 Window::Window() {
 	if (!glfwInit()) {
@@ -14,10 +15,11 @@ Window::Window() {
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 3);
 	glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
 	glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);
-	//glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
+	glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);
 
 	wnd = glfwCreateWindow(1024, 768, "Raytracer", nullptr, nullptr);
 	glfwMakeContextCurrent(wnd);
+	glfwSwapInterval(0);
 
 	glewExperimental = true;
 	if (glewInit() != GLEW_OK) {
@@ -41,6 +43,7 @@ void Window::mainloop() {
 	glGenBuffers(1, &vbo);
 	glBindVertexArray(vao);
 	glBindBuffer(GL_ARRAY_BUFFER, vbo);
+	// These vertices define two triangles that fill the entire viewport.
 	GLfloat vertices[] = {
 		1, 1, 0,
 		1, -1, 0,
@@ -53,13 +56,32 @@ void Window::mainloop() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 
+	timeNFramesAgo = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(wnd)) {
+		// Update everything.
+		update_uniforms();
+
+		// Draw everything.
 		glClear(GL_COLOR_BUFFER_BIT);
 
 		glDrawArrays(GL_TRIANGLES, 0, 6);
 
 		glfwSwapBuffers(wnd);
 		glfwPollEvents();
+
+		// Update FPS counter.
+		++frameCount;
+		if (frameCount % framesPerFPSMessage == 0) {
+			// Display an FPS message to the command line.
+			auto now = std::chrono::high_resolution_clock::now();
+			long long duration_us = std::chrono::duration_cast<std::chrono::microseconds>(now - timeNFramesAgo).count();
+			timeNFramesAgo = now;
+
+			// Time for one frame in microseconds.
+			float frameTime_us = ((float)duration_us) / framesPerFPSMessage;
+			float fps = 1000000.f / frameTime_us;
+			printf("%d FPS\n", (int)fps);
+		}
 	}
 }
 
@@ -114,4 +136,6 @@ void Window::loadShaders() {
 	glDeleteShader(fragID);
 
 	glUseProgram(program);
+
+	init_uniforms(program);
 }
