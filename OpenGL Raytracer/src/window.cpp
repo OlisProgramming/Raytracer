@@ -56,9 +56,15 @@ void Window::mainloop() {
 	glVertexAttribPointer(0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 	glEnableVertexAttribArray(0);
 
-	timeNFramesAgo = std::chrono::high_resolution_clock::now();
+	timeNFramesAgo = timeSinceStart = std::chrono::high_resolution_clock::now();
 	while (!glfwWindowShouldClose(wnd)) {
+		auto now = std::chrono::high_resolution_clock::now();
+
 		// Update everything.
+		// First, set the uniform values to what we want:
+		uniformData.aspect = 1024.f / 768.f;
+		float time = std::chrono::duration_cast<std::chrono::microseconds>(now - timeSinceStart).count() / 1000000.f;
+		uniformData.camView = glm::rotate(time, glm::vec3(0, 0, 1)) * glm::translate(glm::vec3(-5, 0, 0));
 		update_uniforms();
 
 		// Draw everything.
@@ -73,7 +79,6 @@ void Window::mainloop() {
 		++frameCount;
 		if (frameCount % framesPerFPSMessage == 0) {
 			// Display an FPS message to the command line.
-			auto now = std::chrono::high_resolution_clock::now();
 			long long duration_us = std::chrono::duration_cast<std::chrono::microseconds>(now - timeNFramesAgo).count();
 			timeNFramesAgo = now;
 

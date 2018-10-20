@@ -1,6 +1,7 @@
 #version 330 core
 
 uniform float aspect;
+uniform mat4 camView;
 
 in vec2 pos;
 out vec4 colour;
@@ -17,6 +18,13 @@ struct Sphere {
 	vec3 o;
 	// Radius squared
 	float r2;
+};
+
+struct PointLight {
+	// Origin
+	vec3 o;
+	// x^2 light attenuation coefficient (effective brightness)
+	float atten;
 };
 
 // Returns the value for t such that the position of intersection
@@ -64,22 +72,49 @@ float nearestIntersectionRaySphere(Ray r, Sphere s) {
 	return t1;
 }
 
+// Calculates the direction of the normal to the sphere at this particular
+// point on the sphere. In this case it's as simple as finding the normalised
+// vector from the centre of the sphere to the intersection.
+vec3 normalToSphere(vec3 point, Sphere sphere) {
+	return normalize(point - sphere.o);
+}
+
 void main() {
 	// Calculate the ray coming from the camera through this pixel.
 	// We look in the +x direction.
 	// +y is right,
 	// +z is up.
 	Ray r;
-	r.o = vec3(0.f, 0.f, 0.f);
-	r.d = normalize(vec3(1.f, pos.x * aspect, pos.y));
+	r.o = (camView * vec4(0.f, 0.f, 0.f, 1.f)).xyz;
+	r.d = normalize((camView * vec4(1.f, pos.x * aspect, pos.y, 1.f)).xyz - r.o);
 
 	Sphere s;
-	s.o = vec3(5.f, 0.f, 0.f);
+	s.o = vec3(0.f, 0.f, 0.f);
 	s.r2 = 1.f;
 
-	// Set the output colour to RGBA: R(x pos) G(y pos) B(0) A(1).
-    //colour = vec4(pos/2.f+0.5f, 0.f, 1.f);
+	PointLight l;
+	l.o = vec3(-5.f, -0.5f, 0.5f);
+	l.atten = 10;
+
 	float t = nearestIntersectionRaySphere(r, s);
-	if (t < 0) colour = vec4(0.f, 0.f, 0.f, 1.f);
-	else colour = vec4(1.f, 0.f, 0.f, 1.f);
+	if (t < 0) {
+		colour = vec4(0.f, 0.f, 0.f, 1.f);
+	} else {
+		// The intensity of the light from diffuse reflection at a certain point is affected
+		// by the angle the light makes with the material's normal.
+		vec3 intersectionPoint = r.o + t*r.d;
+		vec3 pointToLight = l.o - intersectionPoint;
+		float intensityMultiplier = dot(normalize(pointToLight), normalToSphere(intersectionPoint, s));
+		// We can't have negative light.
+		if (intensityMultiplier < 0) {
+			intensityMultiplier = 0;
+		}
+
+		// Intensity is calculated with the attenuation equation 1/d^2 (inverse-square law).
+		float distanceFromLight = length(pointToLight);
+		float intensity = l.atten / (distanceFromLight * distanceFromLight);
+		intensity *= intensityMultiplier;
+
+		colour = vec4(1.f * intensity, 0.f, 0.f, 1.f);
+	}
 }
