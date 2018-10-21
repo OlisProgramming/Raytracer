@@ -6,6 +6,17 @@ uniform mat4 camView;
 in vec2 pos;
 out vec4 colour;
 
+// If there is no diffuse component, or no specular component (for example),
+// simply set their values to (0, 0, 0).
+struct Material {
+	// Diffuse colour
+	vec3 diffuse;
+	// Specular colour
+	vec3 specular;
+	// Specular shininess
+	float shininess;
+};
+
 struct Ray {
 	// Origin
 	vec3 o;
@@ -14,6 +25,8 @@ struct Ray {
 };
 
 struct Sphere {
+	// Material
+	Material m;
 	// Origin
 	vec3 o;
 	// Radius squared
@@ -89,6 +102,9 @@ void main() {
 	r.d = normalize((camView * vec4(1.f, pos.x * aspect, pos.y, 1.f)).xyz - r.o);
 
 	Sphere s;
+	s.m.diffuse = vec3(1.f, 0.f, 0.f);
+	s.m.specular = 0.5f * vec3(1.f, 1.f, 1.f);
+	s.m.shininess = 128f;
 	s.o = vec3(0.f, 0.f, 0.f);
 	s.r2 = 1.f;
 
@@ -108,18 +124,16 @@ void main() {
 		vec3 intersectionPoint = r.o + t*r.d;
 		vec3 pointToLight = l.o - intersectionPoint;
 		float diffuseIntensityMultiplier = max(dot(normalize(pointToLight), normalToSphere(intersectionPoint, s)), 0.f);
-		vec3 diffuseIntensity = vec3(1,1,1) * diffuseIntensityMultiplier;
+		vec3 diffuseIntensity = s.m.diffuse * diffuseIntensityMultiplier;
 
-		float shininess = 32;
 		vec3 reflectDir = reflect(-normalize(pointToLight), normalToSphere(intersectionPoint, s));
-		vec3 specularIntensity = vec3(1,1,1) * pow(max(-dot(r.d, reflectDir), 0.f), shininess);
+		vec3 specularIntensity = s.m.specular * pow(max(-dot(r.d, reflectDir), 0.f), s.m.shininess);
 
 		// Intensity is calculated with the attenuation equation 1/d^2 (inverse-square law).
 		float distanceFromLight = length(pointToLight);
 		float intensityMultiplier = l.atten / (distanceFromLight * distanceFromLight);
 
-		vec3 result = ambientIntensity + diffuseIntensity + 0.5*specularIntensity;
-		result *= vec3(1, 0.1, 0.1);
+		vec3 result = ambientIntensity + diffuseIntensity + specularIntensity;
 		result *= intensityMultiplier;
 
 		colour = vec4(result, 1.f);
