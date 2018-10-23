@@ -6,13 +6,15 @@ uniform mat4 camView;
 in vec2 pos;
 out vec4 colour;
 
+// We can't use vec3's for UBOs/SSBOs because vec3 isn't on the right alignment.
+
 // If there is no diffuse component, or no specular component (for example),
 // simply set their values to (0, 0, 0).
 struct Material {
 	// Diffuse colour
-	vec3 diffuse;
+	vec4 diffuse;
 	// Specular colour
-	vec3 specular;
+	vec4 specular;
 	// Specular shininess
 	float shininess;
 };
@@ -28,7 +30,7 @@ struct Sphere {
 	// Material
 	Material m;
 	// Origin
-	vec3 o;
+	vec4 o;
 	// Radius squared
 	float r2;
 };
@@ -39,6 +41,14 @@ struct PointLight {
 	// x^2 light attenuation coefficient (effective brightness)
 	float atten;
 };
+
+////////////////////////////////
+
+layout (std140) uniform StaticWorldDataSpheres {
+	Sphere sphere;
+} swdSpheres;
+
+////////////////////////////////
 
 // Returns the value for t such that the position of intersection
 // can be represented by (r.o + t*r.d).
@@ -56,12 +66,12 @@ float nearestIntersectionRaySphere(Ray r, Sphere s) {
 	//	v = (o - c);
 
 	// Precalculate some useful data.
-	vec3 v = r.o - s.o;
-	float dot_v_d = dot(v, r.d);
+	vec3 v = r.o.xyz - s.o.xyz;
+	float dot_v_d = dot(v.xyz, r.d.xyz);
 
 	// First, calculate the discriminant so we know whether real
 	// solutions exist.
-	float discriminant = dot_v_d * dot_v_d - dot(v, v) + s.r2;
+	float discriminant = dot_v_d * dot_v_d - dot(v.xyz, v.xyz) + s.r2;
 
 	// If the discriminant is <0, there are no solutions.
 	if (discriminant < 0.f) {
@@ -89,7 +99,7 @@ float nearestIntersectionRaySphere(Ray r, Sphere s) {
 // point on the sphere. In this case it's as simple as finding the normalised
 // vector from the centre of the sphere to the intersection.
 vec3 normalToSphere(vec3 point, Sphere sphere) {
-	return normalize(point - sphere.o);
+	return normalize(point - sphere.o.xyz);
 }
 
 void main() {
@@ -99,14 +109,14 @@ void main() {
 	// +z is up.
 	Ray r;
 	r.o = (camView * vec4(0.f, 0.f, 0.f, 1.f)).xyz;
-	r.d = normalize((camView * vec4(1.f, pos.x * aspect, pos.y, 1.f)).xyz - r.o);
+	r.d = normalize((camView * vec4(1.f, pos.x * aspect, pos.y, 1.f)).xyz - r.o.xyz);
 
-	Sphere s;
-	s.m.diffuse = vec3(1.f, 0.f, 0.f);
-	s.m.specular = 0.5f * vec3(1.f, 1.f, 1.f);
-	s.m.shininess = 128f;
-	s.o = vec3(0.f, 0.f, 0.f);
-	s.r2 = 1.f;
+	Sphere s = swdSpheres.sphere;
+	//s.m.diffuse = vec3(1.f, 0.f, 0.f);
+	//s.m.specular = 0.5f * vec3(1.f, 1.f, 1.f);
+	//s.m.shininess = 128f;
+	//s.o = vec3(0.f, 0.f, 0.f);
+	//s.r2 = 1.f;
 
 	PointLight l;
 	l.o = vec3(-5.f, -0.5f, 0.5f);
@@ -124,10 +134,10 @@ void main() {
 		vec3 intersectionPoint = r.o + t*r.d;
 		vec3 pointToLight = l.o - intersectionPoint;
 		float diffuseIntensityMultiplier = max(dot(normalize(pointToLight), normalToSphere(intersectionPoint, s)), 0.f);
-		vec3 diffuseIntensity = s.m.diffuse * diffuseIntensityMultiplier;
+		vec3 diffuseIntensity = s.m.diffuse.xyz * diffuseIntensityMultiplier;
 
 		vec3 reflectDir = reflect(-normalize(pointToLight), normalToSphere(intersectionPoint, s));
-		vec3 specularIntensity = s.m.specular * pow(max(-dot(r.d, reflectDir), 0.f), s.m.shininess);
+		vec3 specularIntensity = s.m.specular.xyz * pow(max(-dot(r.d, reflectDir), 0.f), s.m.shininess);
 
 		// Intensity is calculated with the attenuation equation 1/d^2 (inverse-square law).
 		float distanceFromLight = length(pointToLight);

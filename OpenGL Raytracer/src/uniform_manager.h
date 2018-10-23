@@ -12,5 +12,5 @@ struct UniformData {
 };
 extern UniformData uniformData;
 
-void init_uniforms(GLuint shaderProgram);
-void update_uniforms();
+void initUniforms(GLuint shaderProgram);
+void updateUniforms();

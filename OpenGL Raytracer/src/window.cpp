@@ -5,6 +5,7 @@
 
 #include "readfile.h"
 #include "uniform_manager.h"
+#include "world_buffer.h"
 
 Window::Window() {
 	if (!glfwInit()) {
@@ -65,7 +66,7 @@ void Window::mainloop() {
 		uniformData.aspect = 1024.f / 768.f;
 		float time = std::chrono::duration_cast<std::chrono::microseconds>(now - timeSinceStart).count() / 1000000.f;
 		uniformData.camView = glm::rotate(time, glm::vec3(0, 0, 1)) * glm::translate(glm::vec3(-5, 0, 0));
-		update_uniforms();
+		updateUniforms();
 
 		// Draw everything.
 		glClear(GL_COLOR_BUFFER_BIT);
@@ -142,5 +143,6 @@ void Window::loadShaders() {
 
 	glUseProgram(program);
 
-	init_uniforms(program);
+	initUniforms(program);
+	initWorldBuffer(program);
 }
