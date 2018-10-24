@@ -11,19 +11,19 @@ using namespace glm;
 // fields will always be at the start of all of Primitive's 'children'.
 
 struct alignas(16) Primitive {
-	// Material
-	Material m;
+	// Material ID
+	alignas(16) uint m;
 	// Origin
-	vec4 o;
+	alignas(16) vec4 o;
 
-	inline Primitive(Material m, vec3 o) :
+	inline Primitive(uint m, vec3 o) :
 		m(m), o(o, 0) {}
 };
 
 struct alignas(16) Sphere : Primitive {
 	// Radius squared
-	float r2;
+	alignas(16) float r2;
 
-	inline Sphere(Material m, vec3 o, float r) :
-		Primitive{m, vec4(o, 0)}, r2(r*r) {}
+	inline Sphere(uint m, vec3 o, float r) :
+		Primitive(m, vec4(o, 0)), r2(r*r) {}
 };

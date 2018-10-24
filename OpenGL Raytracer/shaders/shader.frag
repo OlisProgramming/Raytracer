@@ -27,8 +27,8 @@ struct Ray {
 };
 
 struct Sphere {
-	// Material
-	Material m;
+	// Material ID
+	uint m;
 	// Origin
 	vec4 o;
 	// Radius squared
@@ -44,7 +44,11 @@ struct PointLight {
 
 ////////////////////////////////
 
-layout (std140) uniform StaticWorldDataSpheres {
+layout (std140) uniform StaticMaterialBuffer {
+	Material materials[1];
+} smb;
+
+layout (std140) uniform StaticWorldBufferSpheres {
 	Sphere sphere;
 } swdSpheres;
 
@@ -112,11 +116,6 @@ void main() {
 	r.d = normalize((camView * vec4(1.f, pos.x * aspect, pos.y, 1.f)).xyz - r.o.xyz);
 
 	Sphere s = swdSpheres.sphere;
-	//s.m.diffuse = vec3(1.f, 0.f, 0.f);
-	//s.m.specular = 0.5f * vec3(1.f, 1.f, 1.f);
-	//s.m.shininess = 128f;
-	//s.o = vec3(0.f, 0.f, 0.f);
-	//s.r2 = 1.f;
 
 	PointLight l;
 	l.o = vec3(-5.f, -0.5f, 0.5f);
@@ -126,6 +125,11 @@ void main() {
 	if (t < 0) {
 		colour = vec4(0.f, 0.f, 0.f, 1.f);
 	} else {
+		Material m = smb.materials[s.m];
+		m.diffuse = vec4(1,1,0,0);
+		m.specular = vec4(1,1,1,0);
+		m.shininess = 8;
+
 		// We'll model light intensity with the Phong reflection model.
 		vec3 ambientIntensity = vec3(1,1,1) * 0.05f;
 
@@ -134,10 +138,10 @@ void main() {
 		vec3 intersectionPoint = r.o + t*r.d;
 		vec3 pointToLight = l.o - intersectionPoint;
 		float diffuseIntensityMultiplier = max(dot(normalize(pointToLight), normalToSphere(intersectionPoint, s)), 0.f);
-		vec3 diffuseIntensity = s.m.diffuse.xyz * diffuseIntensityMultiplier;
+		vec3 diffuseIntensity = m.diffuse.xyz * diffuseIntensityMultiplier;
 
 		vec3 reflectDir = reflect(-normalize(pointToLight), normalToSphere(intersectionPoint, s));
-		vec3 specularIntensity = s.m.specular.xyz * pow(max(-dot(r.d, reflectDir), 0.f), s.m.shininess);
+		vec3 specularIntensity = m.specular.xyz * pow(max(-dot(r.d, reflectDir), 0.f), m.shininess);
 
 		// Intensity is calculated with the attenuation equation 1/d^2 (inverse-square law).
 		float distanceFromLight = length(pointToLight);
