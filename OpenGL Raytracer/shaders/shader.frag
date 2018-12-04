@@ -13,10 +13,8 @@ out vec4 colour;
 struct Material {
 	// Diffuse colour
 	vec4 diffuse;
-	// Specular colour
+	// Specular colour, w component is shininess
 	vec4 specular;
-	// Specular shininess
-	float shininess;
 };
 
 struct Ray {
@@ -45,7 +43,7 @@ struct PointLight {
 ////////////////////////////////
 
 layout (std140) uniform StaticMaterialBuffer {
-	Material materials[1];
+	Material materials[2];
 } smb;
 
 layout (std140) uniform StaticWorldBufferSpheres {
@@ -129,9 +127,9 @@ void main() {
 		if (t > 0 && t < hitDepth) {
 			hitDepth = t;
 			Material m = smb.materials[s.m];
-			m.diffuse = vec4(1,1,0,0);
-			m.specular = vec4(1,1,1,0);
-			m.shininess = 8;
+			//m.diffuse = vec4(1,1,0,0);
+			//m.specular = vec4(1,1,1,0);
+			//m.shininess = 8;
 
 			// We'll model light intensity with the Phong reflection model.
 			vec3 ambientIntensity = vec3(1,1,1) * 0.05f;
@@ -144,7 +142,7 @@ void main() {
 			vec3 diffuseIntensity = m.diffuse.xyz * diffuseIntensityMultiplier;
 
 			vec3 reflectDir = reflect(-normalize(pointToLight), normalToSphere(intersectionPoint, s));
-			vec3 specularIntensity = m.specular.xyz * pow(max(-dot(r.d, reflectDir), 0.f), m.shininess);
+			vec3 specularIntensity = m.specular.xyz * pow(max(-dot(r.d, reflectDir), 0.f), m.specular.w);
 
 			// Intensity is calculated with the attenuation equation 1/d^2 (inverse-square law).
 			float distanceFromLight = length(pointToLight);

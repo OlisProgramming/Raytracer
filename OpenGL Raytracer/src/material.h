@@ -9,11 +9,11 @@ using namespace glm;
 struct alignas(16) Material {
 	// Diffuse colour
 	alignas(16) vec4 diffuse;
-	// Specular colour
+	// Specular colour, w component is shininess
 	alignas(16) vec4 specular;
-	// Specular shininess
-	alignas(16) float shininess;
+
+	inline Material() : Material(vec3(1,1,1), vec3(1,1,1), 32.f) {}
 
 	inline Material(vec3 diffuse, vec3 specular, float shininess) :
-		diffuse(diffuse, 0), specular(specular, 0), shininess(shininess) {}
+		diffuse(diffuse, 0), specular(specular, shininess) {}
 };
