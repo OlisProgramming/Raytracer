@@ -24,6 +24,8 @@ struct alignas(16) Sphere : Primitive {
 	// Radius squared
 	alignas(16) float r2;
 
+	inline Sphere() : Sphere(0, vec3(), 0) {}
+
 	inline Sphere(uint m, vec3 o, float r) :
 		Primitive(m, vec4(o, 0)), r2(r*r) {}
 };

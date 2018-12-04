@@ -7,18 +7,15 @@
 // swb = Static World Buffer
 // Contains all world data that will not change (so we can use GL_STATIC_DRAW).
 GLuint swbSpheres;
-GLuint swbSpheresBindingPoint;
 constexpr GLuint swbSpheresBindingIndex = 1;
 
 // smb = Static Material Buffer
 GLuint smb;
-GLuint smbBindingPoint;
 constexpr GLuint smbBindingIndex = 2;
 
 void initWorldBuffer(GLuint shader) {
 	// Bind the UBO to the shader at a set binding point.
-	swbSpheresBindingPoint = glGetUniformBlockIndex(shader, "StaticWorldBufferSpheres");
-	glUniformBlockBinding(shader, swbSpheresBindingPoint, swbSpheresBindingIndex);
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "StaticWorldBufferSpheres"), swbSpheresBindingIndex);
 
 	// Get size of CPU and GPU versions of this UBO.
 	//GLint size;
@@ -26,17 +23,20 @@ void initWorldBuffer(GLuint shader) {
 	//std::cout << "GPU: " << size << "B\nCPU: " << sizeof(Sphere) << "B\n\n";
 
 	// Create the UBO
+	Sphere spheres[3];
+	spheres[0] = Sphere(0, vec3(), 1.f);
+	spheres[1] = Sphere(0, vec3(-0.7f, 0.f, 0.7f), 0.5f);
+	spheres[2] = Sphere(0, vec3(0.7f, 0.0f, 0.7f), 0.5f);
+
 	glGenBuffers(1, &swbSpheres);
 	glBindBuffer(GL_UNIFORM_BUFFER, swbSpheres);
-	Sphere sphere(0, vec3(), 1.f);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Sphere), &sphere, GL_STATIC_DRAW);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Sphere) * 3, spheres, GL_STATIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, swbSpheresBindingIndex, swbSpheres);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 
 	////
 
-	smbBindingPoint = glGetUniformBlockIndex(shader, "StaticMaterialBuffer");
-	glUniformBlockBinding(shader, smbBindingPoint, smbBindingIndex);
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "StaticMaterialBuffer"), smbBindingIndex);
 
 	glGenBuffers(1, &smb);
 	glBindBuffer(GL_UNIFORM_BUFFER, smb);

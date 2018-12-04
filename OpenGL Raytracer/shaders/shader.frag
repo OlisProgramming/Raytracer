@@ -49,7 +49,7 @@ layout (std140) uniform StaticMaterialBuffer {
 } smb;
 
 layout (std140) uniform StaticWorldBufferSpheres {
-	Sphere sphere;
+	Sphere spheres[3];
 } swdSpheres;
 
 ////////////////////////////////
@@ -115,41 +115,45 @@ void main() {
 	r.o = (camView * vec4(0.f, 0.f, 0.f, 1.f)).xyz;
 	r.d = normalize((camView * vec4(1.f, pos.x * aspect, pos.y, 1.f)).xyz - r.o.xyz);
 
-	Sphere s = swdSpheres.sphere;
-
 	PointLight l;
 	l.o = vec3(-5.f, -0.5f, 0.5f);
 	l.atten = 10;
 
-	float t = nearestIntersectionRaySphere(r, s);
-	if (t < 0) {
-		colour = vec4(0.f, 0.f, 0.f, 1.f);
-	} else {
-		Material m = smb.materials[s.m];
-		m.diffuse = vec4(1,1,0,0);
-		m.specular = vec4(1,1,1,0);
-		m.shininess = 8;
+	colour = vec4(0.f, 0.f, 0.f, 1.f);
+	float hitDepth = 3.402823466e+38;  // reasonably large float value approximating infinity
 
-		// We'll model light intensity with the Phong reflection model.
-		vec3 ambientIntensity = vec3(1,1,1) * 0.05f;
+	for (int i = 0; i < 3; i++) {
+		Sphere s = swdSpheres.spheres[i];
 
-		// The intensity of the light from diffuse reflection at a certain point is affected
-		// by the angle the light makes with the material's normal.
-		vec3 intersectionPoint = r.o + t*r.d;
-		vec3 pointToLight = l.o - intersectionPoint;
-		float diffuseIntensityMultiplier = max(dot(normalize(pointToLight), normalToSphere(intersectionPoint, s)), 0.f);
-		vec3 diffuseIntensity = m.diffuse.xyz * diffuseIntensityMultiplier;
+		float t = nearestIntersectionRaySphere(r, s);
+		if (t > 0 && t < hitDepth) {
+			hitDepth = t;
+			Material m = smb.materials[s.m];
+			m.diffuse = vec4(1,1,0,0);
+			m.specular = vec4(1,1,1,0);
+			m.shininess = 8;
 
-		vec3 reflectDir = reflect(-normalize(pointToLight), normalToSphere(intersectionPoint, s));
-		vec3 specularIntensity = m.specular.xyz * pow(max(-dot(r.d, reflectDir), 0.f), m.shininess);
+			// We'll model light intensity with the Phong reflection model.
+			vec3 ambientIntensity = vec3(1,1,1) * 0.05f;
 
-		// Intensity is calculated with the attenuation equation 1/d^2 (inverse-square law).
-		float distanceFromLight = length(pointToLight);
-		float intensityMultiplier = l.atten / (distanceFromLight * distanceFromLight);
+			// The intensity of the light from diffuse reflection at a certain point is affected
+			// by the angle the light makes with the material's normal.
+			vec3 intersectionPoint = r.o + t*r.d;
+			vec3 pointToLight = l.o - intersectionPoint;
+			float diffuseIntensityMultiplier = max(dot(normalize(pointToLight), normalToSphere(intersectionPoint, s)), 0.f);
+			vec3 diffuseIntensity = m.diffuse.xyz * diffuseIntensityMultiplier;
 
-		vec3 result = ambientIntensity + diffuseIntensity + specularIntensity;
-		result *= intensityMultiplier;
+			vec3 reflectDir = reflect(-normalize(pointToLight), normalToSphere(intersectionPoint, s));
+			vec3 specularIntensity = m.specular.xyz * pow(max(-dot(r.d, reflectDir), 0.f), m.shininess);
 
-		colour = vec4(result, 1.f);
+			// Intensity is calculated with the attenuation equation 1/d^2 (inverse-square law).
+			float distanceFromLight = length(pointToLight);
+			float intensityMultiplier = l.atten / (distanceFromLight * distanceFromLight);
+
+			vec3 result = ambientIntensity + diffuseIntensity + specularIntensity;
+			result *= intensityMultiplier;
+
+			colour = vec4(result, 1.f);
+		}
 	}
 }
