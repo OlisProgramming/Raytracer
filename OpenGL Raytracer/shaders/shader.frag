@@ -7,8 +7,31 @@
 
 #define CULLING
 
+// Define the different sizes for the UBOs.
+// If UBO_SIZE is defined, all UBOs are set to this size.
+// You can overwrite any UBO's default size by setting the equivalent macro.
+#ifndef UBO_SIZE
+# define UBO_SIZE 1024
+#endif
+
+#ifndef SIZE_SMB
+# define SIZE_SMB UBO_SIZE
+#endif
+
+#ifndef SIZE_SWB_SPHERES
+# define SIZE_SWB_SPHERES UBO_SIZE
+#endif
+
+#ifndef SIZE_SWB_TRIS
+# define SIZE_SWB_TRIS UBO_SIZE
+#endif
+
 uniform float aspect;
 uniform mat4 camView;
+
+// Contains the current size of the static world buffers for primitive objects.
+uniform int currentSizeSwbSpheres;
+uniform int currentSizeSwbTris;
 
 in vec2 pos;
 out vec4 colour;
@@ -57,15 +80,15 @@ struct PointLight {
 ////////////////////////////////
 
 layout (std140) uniform StaticMaterialBuffer {
-	Material materials[3];
+	Material materials[SIZE_SMB];
 } smb;
 
 layout (std140) uniform StaticWorldBufferSpheres {
-	Sphere spheres[10];
+	Sphere spheres[SIZE_SWB_SPHERES];
 } swdSpheres;
 
 layout (std140) uniform StaticWorldBufferTris {
-	Triangle tris[12];
+	Triangle tris[SIZE_SWB_TRIS];
 } swdTris;
 
 ////////////////////////////////
@@ -179,7 +202,7 @@ void castRay(Ray r, float tMax, out bool hit, out Material m, out vec3 intersect
 	float hitDepth = tMax;  // reasonably large float value approximating infinity to detect rays from almost infinitely far away
 	hit = false;
 
-	for (int i = 0; i < 10; i++) {
+	for (int i = 0; i < currentSizeSwbSpheres; i++) {
 		Sphere s = swdSpheres.spheres[i];
 
 		float t = nearestIntersectionRaySphere(r, s);
@@ -196,7 +219,7 @@ void castRay(Ray r, float tMax, out bool hit, out Material m, out vec3 intersect
 		}
 	}
 
-	for (int i = 0; i < 12; i++) {
+	for (int i = 0; i < currentSizeSwbTris; i++) {
 		Triangle tri = swdTris.tris[i];
 
 		float t, u, v;
