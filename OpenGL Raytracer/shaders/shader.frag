@@ -79,7 +79,7 @@ struct PointLight {
 
 ////////////////////////////////
 
-layout (std140) uniform StaticMaterialBuffer {
+layout (std140) uniform StaticWorldBufferMaterials {
 	Material materials[SIZE_SMB];
 } smb;
 
