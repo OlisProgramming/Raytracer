@@ -9,9 +9,12 @@
 GLuint swbSpheres;
 constexpr GLuint swbSpheresBindingIndex = 1;
 
+GLuint swbTris;
+constexpr GLuint swbTrisBindingIndex = 2;
+
 // smb = Static Material Buffer
 GLuint smb;
-constexpr GLuint smbBindingIndex = 2;
+constexpr GLuint smbBindingIndex = 3;
 
 void initWorldBuffer(GLuint shader) {
 	// Bind the UBO to the shader at a set binding point.
@@ -44,6 +47,34 @@ void initWorldBuffer(GLuint shader) {
 
 	////
 
+	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "StaticWorldBufferTris"), swbTrisBindingIndex);
+
+	glGenBuffers(1, &swbTris);
+	glBindBuffer(GL_UNIFORM_BUFFER, swbTris);
+	Triangle tris[12];
+	tris[0] = Triangle(2, vec3(-6, -6, -6), vec3(6, -6, -6), vec3(-6, 6, -6));
+	tris[1] = Triangle(2, vec3(-6, 6, -6), vec3(6, -6, -6), vec3(6, 6, -6));
+
+	tris[2] = Triangle(2, vec3(-6, -6, -6), vec3(-6, -6, 6), vec3(6, -6, -6));
+	tris[3] = Triangle(2, vec3(-6, -6, 6), vec3(6, -6, 6), vec3(6, -6, -6));
+
+	tris[4] = Triangle(2, vec3(-6, 6, -6), vec3(6, 6, -6), vec3(-6, 6, 6));
+	tris[5] = Triangle(2, vec3(-6, 6, 6), vec3(6, 6, -6), vec3(6, 6, 6));
+
+	tris[6] = Triangle(2, vec3(6, 6, -6), vec3(6, -6, -6), vec3(6, 6, 6));
+	tris[7] = Triangle(2, vec3(6, 6, 6), vec3(6, -6, -6), vec3(6, -6, 6));
+
+	tris[8] = Triangle(2, vec3(-6, 6, -6), vec3(-6, 6, 6), vec3(-6, -6, -6));
+	tris[9] = Triangle(2, vec3(-6, 6, 6), vec3(-6, -6, 6), vec3(-6, -6, -6));
+
+	tris[10] = Triangle(2, vec3(-6, -6, 6), vec3(-6, 6, 6), vec3(6, -6, 6));
+	tris[11] = Triangle(2, vec3(-6, 6, 6), vec3(6, 6, 6), vec3(6, -6, 6));
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Triangle) * 12, tris, GL_STATIC_DRAW);
+	glBindBufferBase(GL_UNIFORM_BUFFER, swbTrisBindingIndex, swbTris);
+	glBindBuffer(GL_UNIFORM_BUFFER, 0);
+
+	////
+
 	glUniformBlockBinding(shader, glGetUniformBlockIndex(shader, "StaticMaterialBuffer"), smbBindingIndex);
 
 	//{ GLint size = 0;
@@ -52,10 +83,11 @@ void initWorldBuffer(GLuint shader) {
 
 	glGenBuffers(1, &smb);
 	glBindBuffer(GL_UNIFORM_BUFFER, smb);
-	Material materials[2];
-	materials[0] = Material(vec3(1, 0, 0), vec3(.8f, .3f, .3f), 32.f);
-	materials[1] = Material(vec3(0, 0, 0), vec3(.4f, .4f, .4f), 32.f);
-	glBufferData(GL_UNIFORM_BUFFER, sizeof(Material) * 2, materials, GL_STATIC_DRAW);
+	Material materials[3];
+	materials[0] = Material(vec3(1, 0, 0), vec3(.6f, .3f, .3f), 32.f);
+	materials[1] = Material(vec3(0, 0, 0), vec3(.4f, .4f, .4f), 24.f);
+	materials[2] = Material(vec3(1, 1, 1), vec3(.6f, .6f, .6f), 64.f);
+	glBufferData(GL_UNIFORM_BUFFER, sizeof(Material) * 3, materials, GL_STATIC_DRAW);
 	glBindBufferBase(GL_UNIFORM_BUFFER, smbBindingIndex, smb);
 	glBindBuffer(GL_UNIFORM_BUFFER, 0);
 }
