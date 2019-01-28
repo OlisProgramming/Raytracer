@@ -38,3 +38,5 @@ public:
 // For now, this will be a UBO. If worlds end up getting too much
 // bigger, we may need to change this to an SSBO.
 void initWorldBuffer(GLuint shader);
+
+void tickWorldBuffer(float delta);

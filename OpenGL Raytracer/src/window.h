@@ -11,7 +11,7 @@ private:
 	long framesPerFPSMessage = 1000;
 	// Every 'framesPerFPSMessage'th frame, this gets updated to now().
 	// This is used to calculate FPS.
-	std::chrono::high_resolution_clock::time_point timeSinceStart, timeNFramesAgo;
+	std::chrono::high_resolution_clock::time_point timeSinceStart, timeNFramesAgo, timeLastFrame;
 	// Increments each frame.
 	long frameCount = 0L;
 
